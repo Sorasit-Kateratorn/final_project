@@ -3,35 +3,63 @@ import copy
 import csv
 import os
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-persons = []
-with open(os.path.join(__location__, 'persons.csv')) as f:
-    rows = csv.DictReader(f)
-    for r in rows:
-        persons.append(dict(r))
-print(persons)
+def read_csv_to_table(table_name, filename):
+    __location__ = os.path.realpath(
+        os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+    data = []
+    with open(os.path.join(__location__, filename)) as f:
+        rows = csv.DictReader(f)
+        for r in rows:
+            data.append(dict(r))
+    return Table(table_name, data)
 
 # add in code for a Database class
 
 
-class Data_Base:
+class DataBase:
     def __init__(self):
         self.database = []
+    # table is class table
 
     def insert(self, table):
         self.database.append(table)
+    # name str table_name
+    # self.database is array for store list of table
 
     def search(self, table_name):
         for table in self.database:
             if table.table_name == table_name:
                 return table
         return None
+
+    def delete(self, username):
+        if username == "Cristiano.R":
+            del self.database
+        # check table login if user is admin role
+
+
 # add in code for a Table class
 
 
+class DataBaseBackup:
+    def __init__(self):
+        self.database_back_up = []
+
+    def getdata(self):
+        dict1 = copy.deepcopy(DataBase)
+        self.database_back_up.append(dict1)
+        return self.database_back_up
+
+    def save_data(self):
+        # self.database_back_up.append()
+        pass
+
+
 class Table:
+    # table_name is str
+    # table is array for data field is name of column ex. [{id = 1, name = A}, {id = 2, name = B}]
     def __init__(self, table_name, table):
         self.table_name = table_name
         self.table = table
@@ -83,11 +111,14 @@ class Table:
             for key in item1:
                 if key in attributes_list:
                     dict_temp[key] = item1[key]
+                elif len(attributes_list) == 0:
+                    dict_temp[key] = item1[key]
             temps.append(dict_temp)
         return temps
 
     def __str__(self):
         return self.table_name + ':' + str(self.table)
+
 
 # modify the code in the Table class so that it supports the insert operation where an entry can be added to a list of dictionary
 
