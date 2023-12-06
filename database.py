@@ -4,16 +4,21 @@ import csv
 import os
 
 
-def read_csv_to_table(table_name, filename):
-    __location__ = os.path.realpath(
-        os.path.join(os.getcwd(), os.path.dirname(__file__)))
+class My_Csv:
+    def __init__(self):
+        self.table_data = []
 
-    data = []
-    with open(os.path.join(__location__, filename)) as f:
-        rows = csv.DictReader(f)
-        for r in rows:
-            data.append(dict(r))
-    return Table(table_name, data)
+    def read_csv_to_table(self, table_name, filename):
+        __location__ = os.path.realpath(
+            os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+        data = []
+        with open(os.path.join(__location__, filename)) as f:
+            rows = csv.DictReader(f)
+            for r in rows:
+                data.append(dict(r))
+        table_data = Table(table_name, data)
+        return table_data
 
 # add in code for a Database class
 
