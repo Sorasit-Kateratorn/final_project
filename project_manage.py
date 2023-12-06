@@ -14,8 +14,9 @@ def initializing():
 
     # create an object to read all csv files that will serve as a persistent state for this program
     # create all the corresponding tables for those csv files
-    login_table = database.read_csv_to_table("login", "login.csv")
-    person_table = database.read_csv_to_table("persons", "persons.csv")
+    my_csv = database.My_Csv()
+    login_table = my_csv.read_csv_to_table("login", "login.csv")
+    person_table = my_csv.read_csv_to_table("persons", "persons.csv")
     db = database.DataBase()
     # add all these tables to the database
     # see the guide how many tables are needed
