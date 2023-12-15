@@ -115,33 +115,32 @@ Create and populate the 'login' table.
 
 Retrieve and display a list of all user information, including students and faculty.
 
-**3) Change User Roles**:
+**3) Change User Password**:
 
-Allow the admin to change the roles of users (e.g., change a student to a faculty member).
+Allow the admin to change the username and password of users.
 
 **4) Delete User**:
 
-Allow the admin to delete a user from the system.
+Allow the admin to delete a user from the system. (delete from login table and person table) (either student or faculty only)
 
-**5) View Project Information**:
+**5) View information in all table**:
 
 Retrieve and display information about all projects.
 
-**6) Update Project Status**:
+**6) Update user Information**:
 
-Allow the admin to update the status of projects (e.g., mark a project as completed).
+Allow the admin to update user personal information in person table (e.g., first name, last name).
 
-**7) Update Admin Information**:
+**7) Database Operations**:
 
-Allow the admin to update their personal information (e.g., first name, last name).
+Define functions for database operations such as adding tables, retrieving tables, updating entries, back up, etc.
+
+
+
 ## **`General Notes:`**
 **User Authentication**:
 
 Implement a login system for each role with appropriate authentication mechanisms.
-
-**Database Operations**:
-
-Define functions for database operations such as adding tables, retrieving tables, updating entries, etc.
 
 **Input Validation**:
 
