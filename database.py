@@ -30,6 +30,10 @@ class DataBase:
 
     def insert(self, table):
         self.database.append(table)
+        # Print the memory address in decimal and hexadecimal format
+        print(table.table_name)
+        print("Memory address (decimal):", id(table))
+        # print("Memory address (hex):", hex(id(table)))
     # name str table_name
     # self.database is array for store list of table
 
@@ -39,9 +43,11 @@ class DataBase:
                 return table
         return None
 
-    def delete(self, username):
-        if username == "Cristiano.R":
-            del self.database
+    def delete(self, table_name):
+        for table in self.database:
+            if table.table_name == table_name:
+                table.table.clear()
+
         # check table login if user is admin role
 
 
@@ -82,7 +88,7 @@ class Table:
                     dict2 = copy.deepcopy(item2)
                     dict1.update(dict2)
                     joined_table.table.append(dict1)
-        return joined_table
+        return joined_table  # table project join with member_pending
 
     def filter(self, condition):
         filtered_table = Table(self.table_name + '_filtered', [])
@@ -112,13 +118,22 @@ class Table:
     def select(self, attributes_list):
         temps = []
         for item1 in self.table:
-            dict_temp = {}
-            for key in item1:
-                if key in attributes_list:
-                    dict_temp[key] = item1[key]
-                elif len(attributes_list) == 0:
-                    dict_temp[key] = item1[key]
-            temps.append(dict_temp)
+            # dict_temp = {}
+            # for key in item1:
+            #     if key in attributes_list:
+            #         dict_temp[key] = item1[key]
+            #     elif len(attributes_list) == 0:
+            #         dict_temp[key] = item1[key]
+            # temps.append(dict_temp)
+
+            if len(attributes_list) == 0:
+                temps.append(item1)
+            else:
+                dict_temp = {}
+                for key in item1:
+                    if key in attributes_list:
+                        dict_temp[key] = item1[key]
+                temps.append(dict_temp)
         return temps
 
     def __str__(self):
