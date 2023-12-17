@@ -30,10 +30,7 @@ class DataBase:
 
     def insert(self, table):
         self.database.append(table)
-        # Print the memory address in decimal and hexadecimal format
-        print(table.table_name)
-        print("Memory address (decimal):", id(table))
-        # print("Memory address (hex):", hex(id(table)))
+
     # name str table_name
     # self.database is array for store list of table
 
@@ -97,6 +94,14 @@ class Table:
                 filtered_table.table.append(item1)
         return filtered_table
 
+    def delete(self, condition):
+        deleting_items = []
+        for item in self.table:
+            if condition(item):
+                deleting_items.append(item)
+        for deleting_item in deleting_items:
+            self.table.remove(deleting_item)
+
     def __is_float(self, element):
         if element is None:
             return False
@@ -135,6 +140,12 @@ class Table:
                         dict_temp[key] = item1[key]
                 temps.append(dict_temp)
         return temps
+
+    def update(self, condition, update_item):
+        for item1 in self.table:
+            if condition(item1):
+                for key in item1:
+                    item1[key] = update_item[key]  # update row
 
     def __str__(self):
         return self.table_name + ':' + str(self.table)
