@@ -10,7 +10,7 @@
 
 # **`Evaluation step`** 
 
-1) lead student has to send a request to member1 and member2 after member accept the request (use person table) (status "newly create" in project table)
+1) lead student has to send a request to member1 and member2 after member accept the request (use Member_pending table) (status "newly create" in project table)
 
 2) lead student send a request to faculty for advisor (if faculty denies lead student has to send a request to other faculty) (status "newly create" in project table)
 
