@@ -65,12 +65,9 @@ class Student:
         self.type = user['role']
         self.user = user
 
-    # ProjectID,Title,Lead,Member1,Member2,Advisor,Status
     def create_project(self, db, Title, Member1, Member2, Advisor, Status='newly create'):
         self.user['role'] = "lead student"
         project_table = db.search("projects")
-        # Member_pending_table = db.search("Member_pending")
-        # Advisor_pending_table = db.search("Advisor_pending")
         Project_ID = str(len(project_table.table) + 1)
         project_entry = {
             'ProjectID': Project_ID,
@@ -82,22 +79,6 @@ class Student:
             'Status': Status}
         project_table.insert_entry(project_entry)
 
-        # Member1_entry = {'ProjectID': Project_ID,
-        #                  'to_be_member': Member1}
-        # Member2_entry = {'ProjectID': Project_ID,
-        #                  'to_be_member': Member2}
-
-        # Member_pending_table.insert_entry(Member1_entry)
-        # Member_pending_table.insert_entry(Member2_entry)
-
-        # Advisor_entry = {'ProjectID': Project_ID,
-        #                  'to_be_advisor': Advisor}  # ProjectID,to_be_advisor,Response,Response_date
-
-        # Advisor_pending_table.insert_entry(Advisor_entry)
-
-        # create new record in project table
-
-    # ProjectID,to_be_member,Response,Response_date
     def accept_invitation(self, db, ProjectID):
         self.user['role'] = "member student"
         member_pending_entry = {'ProjectID': ProjectID,
@@ -354,8 +335,12 @@ elif user['role'] == 'faculty':
     our_faculty = Faculty(user)
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
+        """
+        faculty will see the invitation after the group has two member already
+
+        """
         filter_project_table = db.search("projects").filter(
-            lambda x: x['Advisor'] == user['ID'] and x['Status'] == "newly create")
+            lambda x: x['Advisor'] == user['ID'] and x['Status'] == "submittion")
         projects = filter_project_table.select([])
         print(f"You have invite {len(projects)} projects")
         for row in projects:
