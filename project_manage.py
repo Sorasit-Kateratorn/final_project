@@ -1,8 +1,6 @@
 # import database module
 import database
 import os
-import csv
-import random
 import sys
 import datetime
 
@@ -100,40 +98,44 @@ class Student:
         # create new record in project table
 
     # ProjectID,to_be_member,Response,Response_date
-    def accept_invitation(self, Member_pending_table, ProjectID):
+    def accept_invitation(self, db, ProjectID):
         self.user['role'] = "member student"
         member_pending_entry = {'ProjectID': ProjectID,
                                 'to_be_member': self.ID,
                                 'Response': "Accept",
                                 'Response_date': str(datetime.datetime.now())}
 
-        Member_pending_table.insert_entry(member_pending_entry)
+        member_pending = db.search('Member_pending')
+        member_pending.insert_entry(member_pending_entry)
+        check_member = member_pending.filter(
+            lambda x: x['ProjectID'] == ProjectID and x['Response'] == "Accept").select([])
+        if len(check_member) == 2:
+            project_table = db.search("projects")
+            change_status = project_table.filter(
+                lambda x: x['ProjectID'] == ProjectID).select([])
+            for change in change_status:
+                change['Status'] = "submittion"
 
-    # deny select exit == deny
-    # def deny_invitation(self, member_pending_table):
-    #     # Assuming member_pending_table has columns like 'project_id' and 'student_id'
-    #     pending_entries = member_pending_table.filter(
-    #         lambda entry: entry['student_id'] == self.ID)
-    #     if pending_entries:
-    #         # Assuming there is only one pending invitation for simplicity
-    #         member_pending_table.table.remove(pending_entries[0])
-    #         print(f"Invitation denied for student with ID {self.ID}.")
-    #     else:
-    #         print("Error: No pending invitations found.")
-    # # update member pending table response = deny
+    def deny_invitation(self, db, ProjectID):
+        member_pending_entry = {'ProjectID': ProjectID,
+                                'to_be_member': self.ID,
+                                'Response': "Deny",
+                                'Response_date': str(datetime.datetime.now())}
 
-    # ProjectID,to_be_advisor,Response,Response_date
+        member_pending = db.search('Member_pending')
+        member_pending.insert_entry(member_pending_entry)
 
-    def invite_advisor(self, Advisor_pending_request, Response, Response_date=datetime.datetime.now()):
-        self.type = "lead student"
-        invite_entry = {'ProjectID': str(len(Advisor_pending_request.table) + 1),
-                        'Response': Response,
-                        'Response_date': Response_date}
+        project_table = db.search("projects")
+        projects = project_table.filter(
+            lambda x: x['ProjectID'] == ProjectID).select(['ProjectID', 'Title', 'Lead', 'Member1', 'Member2', 'Advisor', 'Status'])
+        for project in projects:
+            if project['Member1'] == user['ID']:
+                project['Member1'] = ''
 
-        Advisor_pending_request.insert_entry(invite_entry)
-
-    def __str__(self):
-        return f"Student(ID: {self.ID}, Username: {self.Username}, Type: {self.type}, Project_ID: {self.Project_ID})"
+            if project['Member2'] == user['ID']:
+                project['Member2'] = ''
+            project_table.update(
+                lambda x: x['ProjectID'] == ProjectID, project)
 
 
 class Faculty:
@@ -142,29 +144,41 @@ class Faculty:
         self.Username = user['username']
         self.Password = user['password']
         self.type = user['role']
+        self.user = user
 
-    # ProjectID,to_be_advisor,Response,Response_date
-    def accept_advisor(self, Advisor_pending_request, Response, Response_date=datetime.datetime.now()):
-        self.type = "lead student"
-        invite_entry = {'ProjectID': str(len(Advisor_pending_request.table) + 1),
-                        'Response': Response,
-                        'Response_date': Response_date}
+    def accept_advisor(self, db, Project_ID):
+        self.user['role'] = "advisor"
+        invite_entry = {'ProjectID': Project_ID,
+                        'to_be_advisor ': self.ID,
+                        'Response': "Accept",
+                        'Response_date': str(datetime.datetime.now())}
 
+        Advisor_pending_request = db.search('Advisor_pending')
         Advisor_pending_request.insert_entry(invite_entry)
+        project_table = db.search("projects")
+        projects = project_table.filter(
+            lambda x: x['ProjectID'] == Project_ID).select([])
+        for project in projects:
+            project['Status'] = 'final approve'
 
-    # def deny_invitation(self, Advisor_pending_request):
-    #     pending_entries = Advisor_pending_request.filter(
-    #         lambda entry: entry['faculty_id'] == self.ID)
-    #     if pending_entries:
-    #         # Assuming there is only one pending invitation for simplicity
-    #         Advisor_pending_request.table.remove(pending_entries[0])
-    #         print(f"Invitation denied for advisor with ID {self.ID}.")
-    #     else:
-    #         print("Error: No pending invitations found.")
-    # # update Adisor pending table response = deny
+    def deny_advisor(self, db, ProjectID):
+        advisor_pending_entry = {'ProjectID': ProjectID,
+                                 'to_be_member': self.ID,
+                                 'Response': "Deny",
+                                 'Response_date': str(datetime.datetime.now())}
 
-        def __str__(self):
-            return f"Faculty(ID: {self.ID}, Username: {self.Username}, Type: {self.type}"
+        advisor_pending = db.search('Advisor_pending')
+        advisor_pending.insert_entry(advisor_pending_entry)
+
+        project_table = db.search("projects")
+        projects = project_table.filter(
+            lambda x: x['ProjectID'] == ProjectID).select(['ProjectID', 'Title', 'Lead', 'Member1', 'Member2', 'Advisor', 'Status'])
+        for project in projects:
+            project['Status'] = 'submittion fail'
+            if project['Advisor'] == user['ID']:
+                project['Advisor'] = ''
+            project_table.update(
+                lambda x: x['ProjectID'] == ProjectID, project)
 
 
 class Admin:
@@ -174,19 +188,12 @@ class Admin:
         self.Password = user['password']
         self.type = user['role']
 
-    def delete(self):
-        pass
-
 
 # define a function called exit
 
 
 # save in exit function
 def exit(db: database.DataBase):
-    """
-    change your file path to write the file all file must in the same folder
-
-    """
 
     dict_field = {
         'login': ['ID', 'username', 'password', 'role'],
@@ -195,32 +202,17 @@ def exit(db: database.DataBase):
         'Advisor_pending': ['ProjectID', 'to_be_advisor', 'Response', 'Response_date'],
         'Member_pending': ['ProjectID', 'to_be_member', 'Response', 'Response_date']}
     for table in db.database:
-        filepath = 'D:/IthXD/final_project/' + table.table_name + ".csv"
+        filepath = os.getcwd() + "/" + table.table_name + ".csv"
         print(filepath)
         # open the file in the write mode
         f = open(filepath, 'w')  # relative path
         fields = dict_field[table.table_name]
         f.write(','.join(fields) + "\n")
         # # write a row to the csv file
-        # print(','.join(fields))
         for row in table.table:
             f.write(','.join(row.values()) + "\n")
-            # print(','.join(row.values()))
+
         f.close()
-        # myFile = open(filepath, 'r')
-        # print("The content of the csv file is:")
-        # print(myFile.read())
-        # myFile.close()
-    # insert_value = [{'ID': '7447677', 'username': 'Cristiano.R', 'password': '2255', 'role': 'admin'}, {'ID': '9898118', 'username': 'Lionel.M', 'password': '2977', 'role': 'student'}, {'ID': '5662557', 'username': 'Manuel.N', 'password': '1244', 'role': 'student'}, {'ID': '5687866', 'username': 'Robert.L', 'password': '8176', 'role': 'student'}, {'ID': '3557832', 'username': 'Gareth.B', 'password': '9462', 'role': 'student'}, {'ID': '2592572', 'username': 'Thibaut.C', 'password': '1985', 'role': 'student'}, {'ID': '1554306', 'username': 'Eden.H', 'password': '9106', 'role': 'student'}, {'ID': '4788888', 'username': 'Thiago.S', 'password': '5052', 'role': 'student'}, {'ID': '1863421', 'username': 'Sergio.R', 'password': '7228', 'role': 'student'}, {'ID': '4865631', 'username': 'Paul.P', 'password': '6956', 'role': 'student'}, {'ID': '7476758', 'username': 'Antoine.G', 'password': '6795', 'role': 'student'}, {'ID': '3938213', 'username': 'Marco.R', 'password': '8512', 'role': 'student'}, {'ID': '8382345', 'username': 'Toni.K', 'password': '7595', 'role': 'student'}, {
-    #     'ID': '1042748', 'username': 'Mats.H', 'password': '1111', 'role': 'student'}, {'ID': '1228464', 'username': 'Hugo.L', 'password': '2193', 'role': 'student'}, {'ID': '4850789', 'username': 'Giorgio.C', 'password': '1201', 'role': 'student'}, {'ID': '5484541', 'username': 'Philipp.L', 'password': '4214', 'role': 'student'}, {'ID': '7998314', 'username': 'Gianluigi.B', 'password': '2351', 'role': 'student'}, {'ID': '5086282', 'username': 'Leonardo.B', 'password': '9413', 'role': 'student'}, {'ID': '8466074', 'username': 'Arjen.R', 'password': '6779', 'role': 'faculty'}, {'ID': '2567260', 'username': 'Paulo.D', 'password': '1312', 'role': 'faculty'}, {'ID': '8347432', 'username': 'Marco.V', 'password': '8780', 'role': 'faculty'}, {'ID': '4720327', 'username': 'David.A', 'password': '3861', 'role': 'faculty'}, {'ID': '7525643', 'username': 'Henrikh.M', 'password': '2636', 'role': 'faculty'}, {'ID': '2472659', 'username': 'Karim.B', 'password': '3828', 'role': 'faculty'}, {'ID': '1234567', 'username': 'Sorasit', 'password': '2014', 'role': 'student'}]
-    # for value in insert_value:
-    #     writer.writerow(value.values())
-    # # close the file
-    # f.close()
-    # myFile = open('D:/IthXD/final_project/login.csv', 'r')
-    # print("The content of the csv file is:")
-    # print(myFile.read())
-    # myFile.close()
 
 
 def get_user_by_id(db, id):
@@ -249,16 +241,15 @@ user = login(db.search("login"))
 if user['role'] == 'student':  # create project and accept project from invite
     print("Option for student")
     print("1: for create project")
-    print("2: for accept invitation")
+    print("2: for accept invitation or deny it")
     print("3: Exit")
-    print("4: Display project")
     my_student = Student(user)
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
         project_title = input("Input project Title: ")
         member1 = None
         while member1 == None:
-            invite_member1 = input("Input id member1: ")
+            invite_member1 = input("Input id member1 for invitation: ")
             member1 = get_user_by_id(db, invite_member1)
             if member1 == None or member1["role"] != "student":
                 print("User not found or invalid role")
@@ -266,7 +257,7 @@ if user['role'] == 'student':  # create project and accept project from invite
 
         member2 = None
         while member2 == None:
-            invite_member2 = input("Input id member2: ")
+            invite_member2 = input("Input id member2 for invitation: ")
             member2 = get_user_by_id(db, invite_member2)
             if member2 == None or member2["role"] != "student" or member2 == member1:
                 print("User not found or invalid role")
@@ -274,7 +265,7 @@ if user['role'] == 'student':  # create project and accept project from invite
 
         advisor = None
         while advisor == None:
-            invite_advisor = input("Input advisor: ")
+            invite_advisor = input("Input id faculty to be advisor: ")
             advisor = get_user_by_id(db, invite_advisor)
             if advisor == None or advisor["role"] == "student":
                 print("User not found or invalid role")
@@ -290,9 +281,22 @@ if user['role'] == 'student':  # create project and accept project from invite
         print(f"You have invite {len(projects)} projects")
         for row in projects:
             print(row['ProjectID'] + ": " + row['Title'])
-        ask = input("Project ID or q(quit): ")
-        if ask != "q":
-            my_student.accept_invitation(db.search("Member_pending"), ask)
+        if len(projects) == 0:
+            print("You dont have any project invitation")
+            sys.exit()
+        ask = input("a(accept) or d(deny) or q(quit): ")
+
+        if ask == "a":
+            projectid = input("Project ID: ")
+            my_student.accept_invitation(
+                db, projectid)
+
+        elif ask == "d":
+            projectid = input("Project ID: ")
+            my_student.deny_invitation(
+                db, projectid)
+        elif ask == "q":
+            sys.exit()
 
     elif user_choice == 3:
         sys.exit()
@@ -307,11 +311,22 @@ elif user['role'] == 'lead student':
     user_choice = int(input("Select choice: "))
 
     if user_choice == 1:
-        pass
+        project_table = db.search('projects').filter(
+            lambda x: x['Lead'] == user['ID']).select([])
+        print(project_table)
+
     elif user_choice == 2:
-        pass
+        project_table = db.search('projects').filter(
+            lambda x: x['Lead'] == user['ID'])
+        member_pending_table = db.search('Member_pending')
+        print(project_table.join(member_pending_table, "ProjectID").select([]))
+
     elif user_choice == 3:
-        pass
+        project_table = db.search('projects').filter(
+            lambda x: x['Lead'] == user['ID'])
+        advisor_pending_table = db.search('Advisor_pending')
+        print(project_table.join(advisor_pending_table, "ProjectID").select([]))
+
     elif user_choice == 4:
         sys.exit()
 
@@ -323,7 +338,10 @@ elif user['role'] == 'member student':
     user_choice = int(input("Select choice: "))
 
     if user_choice == 1:
-        pass
+        project_table = db.search('projects').filter(
+            lambda x: x['Member1'] == user['ID'] or x['Member2'] == user['ID'])
+        member_pending_table = db.search('Member_pending')
+        print(project_table.select([]))
 
     elif user_choice == 2:
         sys.exit()
@@ -331,45 +349,60 @@ elif user['role'] == 'member student':
 
 elif user['role'] == 'faculty':
     print("Option for faculty")
-    print("1: Display project table")
-    print("2: Display advisor pending table")
-    print("3: for accept invitation")
-    print("4: Exit")
+    print("1: for accept invitation or deny it")
+    print("2: Exit")
+    our_faculty = Faculty(user)
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
-        pass
+        filter_project_table = db.search("projects").filter(
+            lambda x: x['Advisor'] == user['ID'] and x['Status'] == "newly create")
+        projects = filter_project_table.select([])
+        print(f"You have invite {len(projects)} projects")
+        for row in projects:
+            print(row['ProjectID'] + ": " + row['Title'])
+        if len(projects) == 0:
+            print("You dont have any project invitation")
+            sys.exit()
+        ask = input("a(accept) or d(deny) or q(quit): ")
+        if ask == "a":
+            projectid = input("Project ID: ")
+            our_faculty.accept_advisor(
+                db, projectid)
+
+        elif ask == "d":
+            projectid = input("Project ID: ")
+            our_faculty.deny_advisor(
+                db, projectid)
+        elif ask == "q":
+            sys.exit()
 
     elif user_choice == 2:
-        pass
-
-    elif user_choice == 3:
-        pass
-
-    elif user_choice == 4:
         sys.exit()
 
 
 elif user['role'] == 'advisor':
     print("Option for advisor")
-    print("1: Display project table")
+    print("1: Display project table and member_pending_table")
     print("2: Display advisor pending table")
     print("3: Exit")
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
+        """
+
+        it will show after member1 and member2 accept invitation from lead student
+
+        """
         project_table = db.search('projects').filter(
             lambda x: x['Advisor'] == user['ID'])
         member_pending_table = db.search('Member_pending')
-        # project_table.join(member_pending_table, "ProjectID").select([])
-        print("ABC")
         print(project_table.join(member_pending_table, "ProjectID").select([]))
 
     elif user_choice == 2:
-        pass
+        advisor_table = db.search('Advisor_pending').filter(
+            lambda x: x['to_be_advisor'] == user['ID']).select([])
+        print(advisor_table)
 
     elif user_choice == 3:
-        pass
-
-    elif user_choice == 4:
         sys.exit()
 
 
@@ -379,18 +412,40 @@ elif user['role'] == 'admin':
     print("2: Display member pending table and edit")
     print("3: Display advisor pending table and edit")
     print("4: Delete table")
-    print("5: Exit")
+    print("5: Back up data")
+    print("6: Exit")
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
-        pass
+        project_table = db.search('projects').select([])
+        print(project_table)
+
     elif user_choice == 2:
-        pass
+        member_pending_table = db.search('Member_pending').select([])
+        print(member_pending_table)
+
     elif user_choice == 3:
-        pass
+        advisor_table = db.search('Advisor_pending').select([])
+        print(advisor_table)
+
     elif user_choice == 4:
-        db.delete("Member_pending")
+        print("1: Member_pending")
+        print("2: Advisor_pending")
+        print("3: Projects")
+        select = int(input("Select table to delete: "))
+        if select == 1:
+            db.delete("Member_pending")
+        elif select == 2:
+            db.delete("Advisor_pending")
+        elif select == 3:
+            db.delete("projects")
+        else:
+            print("Invalid input")
 
     elif user_choice == 5:
+        db_backup = database.DataBaseBackup()
+        db_backup.getdata()
+
+    elif user_choice == 6:
         sys.exit()
 
 
