@@ -496,14 +496,6 @@ elif user['role'] == 'admin':
 
 
 # input data to table for loop unitil the end then exit
-# table_login = db.search("login")
-# userA = {"ID": "10234", "username": "Sorasit",
-#          "password": "2014", "role": "student"}
-
-# table_login.insert_entry(userA)
-# my_student = Student("6610545944", "Sorasit", " 1234", "student")
-# my_student.create_project(db.search("projects"), "Final")
-
 # based on the return value for login, activate the code that performs activities according to the role defined for that person_id
 
 # if val[1] = 'admin':
