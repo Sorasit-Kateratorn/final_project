@@ -140,7 +140,7 @@ class Faculty:
         projects = project_table.filter(
             lambda x: x['ProjectID'] == Project_ID).select([])
         for project in projects:
-            project['Status'] = 'final approve'
+            project['Status'] = 'evaluation'
 
     def deny_advisor(self, db, ProjectID):
         advisor_pending_entry = {'ProjectID': ProjectID,
@@ -160,6 +160,35 @@ class Faculty:
                 project['Advisor'] = ''
             project_table.update(
                 lambda x: x['ProjectID'] == ProjectID, project)
+
+    def accept_project(self, db, Project_ID):
+        invite_entry = {'ProjectID': Project_ID,
+                        'to_be_advisor ': self.ID,
+                        'Response': " final approve",
+                        'Response_date': str(datetime.datetime.now())}
+
+        Advisor_pending_request = db.search('Advisor_pending')
+        Advisor_pending_request.insert_entry(invite_entry)
+        project_table = db.search("projects")
+        projects = project_table.filter(
+            lambda x: x['ProjectID'] == Project_ID).select([])
+        for project in projects:
+            project['Status'] = 'final approve'
+
+    def deny_project(self, db, Project_ID):
+        advisor_pending_entry = {'ProjectID': Project_ID,
+                                 'to_be_member': self.ID,
+                                 'Response': "evaluation fail",
+                                 'Response_date': str(datetime.datetime.now())}
+
+        advisor_pending = db.search('Advisor_pending')
+        advisor_pending.insert_entry(advisor_pending_entry)
+
+        project_table = db.search("projects")
+        projects = project_table.filter(
+            lambda x: x['ProjectID'] == Project_ID).select([])
+        for project in projects:
+            project['Status'] = 'evaluation fail'
 
 
 class Admin:
@@ -278,6 +307,8 @@ if user['role'] == 'student':  # create project and accept project from invite
                 db, projectid)
         elif ask == "q":
             sys.exit()
+        else:
+            print("Invalid input")
 
     elif user_choice == 3:
         sys.exit()
@@ -361,6 +392,9 @@ elif user['role'] == 'faculty':
         elif ask == "q":
             sys.exit()
 
+        else:
+            print("Invalid input")
+
     elif user_choice == 2:
         sys.exit()
 
@@ -369,7 +403,9 @@ elif user['role'] == 'advisor':
     print("Option for advisor")
     print("1: Display project table and member_pending_table")
     print("2: Display advisor pending table")
-    print("3: Exit")
+    print("3: final approve")
+    print("4: Exit")
+    Advisor = Faculty(user)
     user_choice = int(input("Select choice: "))
     if user_choice == 1:
         """
@@ -388,6 +424,31 @@ elif user['role'] == 'advisor':
         print(advisor_table)
 
     elif user_choice == 3:
+
+        filter_project_table = db.search("projects").filter(
+            lambda x: x['Advisor'] == user['ID'] and x['Status'] == "evaluation")
+        projects = filter_project_table.select([])
+        print(f"You have {len(projects)} projects")
+        for row in projects:
+            print(row['ProjectID'] + ": " + row['Title'])
+        if len(projects) == 0:
+            print("You dont have any project for approve")
+            sys.exit()
+        ask = input("a(accept) or d(deny) or q(quit): ")
+        if ask == "a":
+            projectid = input("Project ID: ")
+            Advisor.accept_project(
+                db, projectid)
+
+        if ask == "d":
+            projectid = input("Project ID: ")
+            Advisor.deny_project(
+                db, projectid)
+
+        if ask == "q":
+            sys.exit()
+
+    elif user_choice == 4:
         sys.exit()
 
 
